@@ -1,0 +1,38 @@
+from flask import Flask, render_template, request, redirect, url_for
+from flask_sqlalchemy import SQLAlchemy
+import datetime
+
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///school.db'
+db = SQLAlchemy(app)
+
+
+class Student(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(80), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    enrollments = db.relationship('Enrollment', backref='student', lazy=True)
+
+class Course(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(120), nullable=False)
+    description = db.Column(db.String(500))
+    enrollments = db.relationship('Enrollment', backref='course', lazy=True)
+
+class Enrollment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(db.Integer, db.ForeignKey('student.id'), nullable=False)
+    course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
+    date_enrolled = db.Column(db.Date, default=datetime.date.today)
+
+@app.route('/')
+def index():
+    students = Student.query.all()
+    courses = Course.query.all()
+    enrollments = Enrollment.query.all()
+    return render_template('index.html', students=students, courses=courses, enrollments=enrollments)
+
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
